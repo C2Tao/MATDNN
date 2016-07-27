@@ -1,2 +1,0 @@
-gmm-global-to-fgmm /home/c2tao/matdnn/ivector/ubm/final.dubm /home/c2tao/matdnn/ivector/ubm/0.ubm 
-LOG (gmm-global-to-fgmm:main():gmm-global-to-fgmm.cc:58) Written full GMM to /home/c2tao/matdnn/ivector/ubm/0.ubm
