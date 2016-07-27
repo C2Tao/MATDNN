@@ -4,7 +4,7 @@ import os
 import time
 import sys
 import shutil
-
+import proto
 # kaldi, htk, srilm, caffe, mallet, matlab
 
 default_zrc_dir = '/home/c2tao/matdnn/'
