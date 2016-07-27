@@ -81,6 +81,11 @@ def extract_ivector(input_wav_dir, output_ivector_file):
     mkdir_for_file(output_ivector_file)
 
     # setup required files
+    mkdir_for_dir(os.path.join(default_ivector_dir, 'ivector'))
+    mkdir_for_dir(os.path.join(default_ivector_dir, 'ubm'))
+    mkdir_for_dir(os.path.join(default_ivector_dir, 'log'))
+    mkdir_for_dir(os.path.join(default_ivector_dir, 'feat'))
+
     def make_scp(path_wav, path_scp):
         wav_list = []
         for f in os.listdir(path_wav):
@@ -103,6 +108,7 @@ def extract_ivector(input_wav_dir, output_ivector_file):
 
     # cleanup, remove large files
     mkdir_for_dir(os.path.join(default_ivector_dir, 'ivector'))
+    mkdir_for_dir(os.path.join(default_ivector_dir, 'ubm'))
     mkdir_for_dir(os.path.join(default_ivector_dir, 'log'))
     mkdir_for_dir(os.path.join(default_ivector_dir, 'feat'))
 
@@ -267,19 +273,19 @@ if __name__=='__main__':
     init_dir = root +'init/'
     rein_dir = root +'rein/'
     extract_ivector(wav_dir, ivector_file)
-    extract_mfcc(wav_dir, feature_file, feature_dir)
-    extract_init(wav_dir, 10, init_dir+'10.txt')
-    extract_init(wav_dir, 20, init_dir+'20.txt')
-    run_parallel(train_tokenizer, [
-                (init_dir+'10.txt', feature_dir, 3,  model_dir+'10_3/'),
-                (init_dir+'10.txt', feature_dir, 5,  model_dir+'10_5/'),
-                (init_dir+'20.txt', feature_dir, 3,  model_dir+'20_3/'),
-                (init_dir+'20.txt', feature_dir, 5,  model_dir+'20_5/')])
+    #extract_mfcc(wav_dir, feature_file, feature_dir)
+    #extract_init(wav_dir, 10, init_dir+'10.txt')
+    #extract_init(wav_dir, 20, init_dir+'20.txt')
+    #run_parallel(train_tokenizer, [
+    #            (init_dir+'10.txt', feature_dir, 3,  model_dir+'10_3/'),
+    #            (init_dir+'10.txt', feature_dir, 5,  model_dir+'10_5/'),
+    #            (init_dir+'20.txt', feature_dir, 3,  model_dir+'20_3/'),
+    #            (init_dir+'20.txt', feature_dir, 5,  model_dir+'20_5/')])
     #train_tokenizer(init_dir+'10.txt', feature_dir, 3,  model_dir+'10_3/')
     #train_tokenizer(init_dir+'10.txt', feature_dir, 5,  model_dir+'10_5/')
     #train_tokenizer(init_dir+'20.txt', feature_dir, 3,  model_dir+'20_3/')
     #train_tokenizer(init_dir+'20.txt', feature_dir, 5,  model_dir+'20_5/')
-    reinforce_label(model_dir, rein_dir, cluster_list = [10], state_list = [3 ,5])
-    reinforce_label(model_dir, rein_dir)
+    #reinforce_label(model_dir, rein_dir, cluster_list = [10], state_list = [3 ,5])
+    #reinforce_label(model_dir, rein_dir)
 
 

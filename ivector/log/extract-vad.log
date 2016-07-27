@@ -1,0 +1,3 @@
+compute-vad --config=material/vad.conf scp:/home/c2tao/matdnn/ivector/feat/feat.scp ark,scp:/home/c2tao/matdnn/ivector/feat/vad.ark,/home/c2tao/matdnn/ivector/feat/vad.scp 
+LOG (compute-vad:main():compute-vad.cc:95) Applied energy based voice activity detection; processed 76 utterances successfully; 0 had empty features, and 0 were completely unvoiced.
+LOG (compute-vad:main():compute-vad.cc:99) Proportion of voiced frames was 0.933351 over 23286 frames.
