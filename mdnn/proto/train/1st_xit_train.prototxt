@@ -1,0 +1,699 @@
+name: "1st_xit_train"
+layers {
+  name: "data"
+  type: HDF5_DATA
+  top: "data"
+  top: "label"
+  hdf5_data_param {
+    source: "exp/1st_xit/train.list"
+    batch_size: 1024
+  }
+}
+layers {
+    name: "slice_label"
+    type: SLICE
+    bottom: "label"
+    top: "label0"
+    top: "label1"
+    top: "label2"
+    top: "label3"
+    top: "label4"
+    top: "label5"
+    top: "label6"
+    top: "label7"
+    top: "label8"
+    top: "label9"
+    top: "label10"
+    top: "label11"
+    top: "label12"
+    top: "label13"
+    top: "label14"
+    top: "label15"
+    slice_param {
+        slice_dim: 1
+        slice_point: 1
+        slice_point: 2
+        slice_point: 3
+        slice_point: 4
+        slice_point: 5
+        slice_point: 6
+        slice_point: 7
+        slice_point: 8
+        slice_point: 9
+        slice_point: 10
+        slice_point: 11
+        slice_point: 12
+        slice_point: 13
+        slice_point: 14
+        slice_point: 15
+    }
+}
+layers {
+  name: "ip1"
+  type: INNER_PRODUCT
+  bottom: "data"
+  top: "ip1"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 256
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+  param: "ip1_w"
+  param: "ip1_b"
+}
+layers {
+  name: "sig1"
+  type: SIGMOID
+  bottom: "ip1"
+  top: "ip1"
+}
+layers {
+  name: "ip2"
+  type: INNER_PRODUCT
+  bottom: "ip1"
+  top: "ip2"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 256
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+  param: "ip2_w"
+  param: "ip2_b"
+}
+layers {
+  name: "sig2"
+  type: SIGMOID
+  bottom: "ip2"
+  top: "ip2"
+}
+layers {
+  name: "ip3"
+  type: INNER_PRODUCT
+  bottom: "ip2"
+  top: "ip3"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 39
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+  param: "ip3_w"
+  param: "ip3_b"
+}
+layers {
+  name: "sig3"
+  type: SIGMOID
+  bottom: "ip3"
+  top: "ip3"
+}
+
+
+layers {
+  name: "output0"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output0"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 101
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss0"
+    type: SOFTMAX_LOSS
+    bottom: "output0"
+    bottom: "label0"
+    top: "loss0"
+}
+
+layers{
+    name: "acc0"
+    type: ACCURACY
+    bottom: "output0"
+    bottom: "label0"
+    top: "acc0"
+    include: { phase: TEST }
+}
+
+
+layers {
+  name: "output1"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output1"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 101
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss1"
+    type: SOFTMAX_LOSS
+    bottom: "output1"
+    bottom: "label1"
+    top: "loss1"
+}
+
+layers{
+    name: "acc1"
+    type: ACCURACY
+    bottom: "output1"
+    bottom: "label1"
+    top: "acc1"
+    include: { phase: TEST }
+}
+
+
+layers {
+  name: "output2"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output2"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 101
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss2"
+    type: SOFTMAX_LOSS
+    bottom: "output2"
+    bottom: "label2"
+    top: "loss2"
+}
+
+layers{
+    name: "acc2"
+    type: ACCURACY
+    bottom: "output2"
+    bottom: "label2"
+    top: "acc2"
+    include: { phase: TEST }
+}
+
+
+layers {
+  name: "output3"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output3"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 101
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss3"
+    type: SOFTMAX_LOSS
+    bottom: "output3"
+    bottom: "label3"
+    top: "loss3"
+}
+
+layers{
+    name: "acc3"
+    type: ACCURACY
+    bottom: "output3"
+    bottom: "label3"
+    top: "acc3"
+    include: { phase: TEST }
+}
+
+
+layers {
+  name: "output4"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output4"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 301
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss4"
+    type: SOFTMAX_LOSS
+    bottom: "output4"
+    bottom: "label4"
+    top: "loss4"
+}
+
+layers{
+    name: "acc4"
+    type: ACCURACY
+    bottom: "output4"
+    bottom: "label4"
+    top: "acc4"
+    include: { phase: TEST }
+}
+
+
+layers {
+  name: "output5"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output5"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 301
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss5"
+    type: SOFTMAX_LOSS
+    bottom: "output5"
+    bottom: "label5"
+    top: "loss5"
+}
+
+layers{
+    name: "acc5"
+    type: ACCURACY
+    bottom: "output5"
+    bottom: "label5"
+    top: "acc5"
+    include: { phase: TEST }
+}
+
+
+layers {
+  name: "output6"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output6"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 301
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss6"
+    type: SOFTMAX_LOSS
+    bottom: "output6"
+    bottom: "label6"
+    top: "loss6"
+}
+
+layers{
+    name: "acc6"
+    type: ACCURACY
+    bottom: "output6"
+    bottom: "label6"
+    top: "acc6"
+    include: { phase: TEST }
+}
+
+layers {
+  name: "output7"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output7"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 301
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss7"
+    type: SOFTMAX_LOSS
+    bottom: "output7"
+    bottom: "label7"
+    top: "loss7"
+}
+
+layers{
+    name: "acc7"
+    type: ACCURACY
+    bottom: "output7"
+    bottom: "label7"
+    top: "acc7"
+    include: { phase: TEST }
+}
+
+
+
+layers {
+  name: "output8"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output8"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 501
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss8"
+    type: SOFTMAX_LOSS
+    bottom: "output8"
+    bottom: "label8"
+    top: "loss8"
+}
+
+layers{
+    name: "acc8"
+    type: ACCURACY
+    bottom: "output8"
+    bottom: "label8"
+    top: "acc8"
+    include: { phase: TEST }
+}
+
+
+layers {
+  name: "output9"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output9"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 501
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss9"
+    type: SOFTMAX_LOSS
+    bottom: "output9"
+    bottom: "label9"
+    top: "loss9"
+}
+
+layers{
+    name: "acc9"
+    type: ACCURACY
+    bottom: "output9"
+    bottom: "label9"
+    top: "acc9"
+    include: { phase: TEST }
+}
+
+
+layers {
+  name: "output10"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output10"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 501
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss10"
+    type: SOFTMAX_LOSS
+    bottom: "output10"
+    bottom: "label10"
+    top: "loss10"
+}
+
+layers{
+    name: "acc10"
+    type: ACCURACY
+    bottom: "output10"
+    bottom: "label10"
+    top: "acc10"
+    include: { phase: TEST }
+}
+
+
+layers {
+  name: "output11"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output11"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 501
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss11"
+    type: SOFTMAX_LOSS
+    bottom: "output11"
+    bottom: "label11"
+    top: "loss11"
+}
+
+layers{
+    name: "acc11"
+    type: ACCURACY
+    bottom: "output11"
+    bottom: "label11"
+    top: "acc11"
+    include: { phase: TEST }
+}
+
+
+
+layers {
+  name: "output12"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output12"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 51
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss12"
+    type: SOFTMAX_LOSS
+    bottom: "output12"
+    bottom: "label12"
+    top: "loss12"
+}
+
+layers{
+    name: "acc12"
+    type: ACCURACY
+    bottom: "output12"
+    bottom: "label12"
+    top: "acc12"
+    include: { phase: TEST }
+}
+
+layers {
+  name: "output13"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output13"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 51
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss13"
+    type: SOFTMAX_LOSS
+    bottom: "output13"
+    bottom: "label13"
+    top: "loss13"
+}
+
+layers{
+    name: "acc13"
+    type: ACCURACY
+    bottom: "output13"
+    bottom: "label13"
+    top: "acc13"
+    include: { phase: TEST }
+}
+
+layers {
+  name: "output14"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output14"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 51
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss14"
+    type: SOFTMAX_LOSS
+    bottom: "output14"
+    bottom: "label14"
+    top: "loss14"
+}
+
+layers{
+    name: "acc14"
+    type: ACCURACY
+    bottom: "output14"
+    bottom: "label14"
+    top: "acc14"
+    include: { phase: TEST }
+}
+
+layers {
+  name: "output15"
+  type: INNER_PRODUCT
+  bottom: "ip3"
+  top: "output15"
+  blobs_lr: 1
+  blobs_lr: 2
+  inner_product_param {
+    num_output: 51
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layers {
+    name: "loss15"
+    type: SOFTMAX_LOSS
+    bottom: "output15"
+    bottom: "label15"
+    top: "loss15"
+}
+
+layers{
+    name: "acc15"
+    type: ACCURACY
+    bottom: "output15"
+    bottom: "label15"
+    top: "acc15"
+    include: { phase: TEST }
+}

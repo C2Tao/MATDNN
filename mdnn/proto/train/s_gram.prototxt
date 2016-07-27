@@ -1,0 +1,234 @@
+name: "skip-gram"
+layer {
+  name: "data"
+  type: "HDF5Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "exp/s_gram/data/train.txt"
+    batch_size: 100
+  }
+}
+layer {
+  name: "data"
+  type: "HDF5Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  hdf5_data_param {
+    source: "exp/s_gram/data/test.txt"
+    batch_size: 100
+  }
+}
+layer {
+  name: "slice_pair"
+  type: "Slice"
+  bottom: "label"
+  top: "label1"
+  top: "label2"
+  top: "label3"
+  top: "label4"
+  slice_param {
+    slice_dim: 1
+    slice_point: 1
+    slice_point: 2
+    slice_point: 3
+  }
+}
+layer {
+  name: "ip1"
+  type: "InnerProduct"
+  bottom: "data"
+  top: "ip1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 39
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "ip1"
+  top: "ip1"
+}
+layer {
+  name: "fc1"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "fc1"
+  param {
+    name: "fc1_w"
+    lr_mult: 1
+  }
+  param {
+    name: "fc1_b"
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 52
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "loss1"
+  type: "SoftmaxWithLoss"
+  bottom: "fc1"
+  bottom: "label1"
+  top: "loss1"
+}
+layer {
+  name: "accuracy1"
+  type: "Accuracy"
+  bottom: "fc1"
+  bottom: "label1"
+  top: "accuracy1"
+  include {
+    phase: TEST
+  }
+}
+layer {
+  name: "fc2"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "fc2"
+  param {
+    name: "fc1_w"
+    lr_mult: 1
+  }
+  param {
+    name: "fc1_b"
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 52
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "loss2"
+  type: "SoftmaxWithLoss"
+  bottom: "fc2"
+  bottom: "label2"
+  top: "loss2"
+}
+layer {
+  name: "accuracy2"
+  type: "Accuracy"
+  bottom: "fc2"
+  bottom: "label2"
+  top: "accuracy2"
+  include {
+    phase: TEST
+  }
+}
+layer {
+  name: "fc3"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "fc3"
+  param {
+    name: "fc1_w"
+    lr_mult: 1
+  }
+  param {
+    name: "fc1_b"
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 52
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "loss3"
+  type: "SoftmaxWithLoss"
+  bottom: "fc3"
+  bottom: "label3"
+  top: "loss3"
+}
+layer {
+  name: "accuracy3"
+  type: "Accuracy"
+  bottom: "fc3"
+  bottom: "label3"
+  top: "accuracy3"
+  include {
+    phase: TEST
+  }
+}
+layer {
+  name: "fc4"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "fc4"
+  param {
+    name: "fc1_w"
+    lr_mult: 1
+  }
+  param {
+    name: "fc1_b"
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 52
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "loss4"
+  type: "SoftmaxWithLoss"
+  bottom: "fc4"
+  bottom: "label4"
+  top: "loss4"
+}
+layer {
+  name: "accuracy4"
+  type: "Accuracy"
+  bottom: "fc4"
+  bottom: "label4"
+  top: "accuracy4"
+  include {
+    phase: TEST
+  }
+}

@@ -1,0 +1,29 @@
+name: "s_gram_deploy"
+input: "data"
+input_dim: 100
+input_dim: 52
+input_dim: 1
+input_dim: 1
+
+layer {
+  name: "ip1"
+  type: "InnerProduct"
+  bottom: "data"
+  top: "ip1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 39
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
