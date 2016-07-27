@@ -81,10 +81,10 @@ def extract_ivector(input_wav_dir, output_ivector_file):
     mkdir_for_file(output_ivector_file)
 
     # setup required files
-    mkdir_for_dir(os.path.join(default_ivector_dir, 'ivector'))
-    mkdir_for_dir(os.path.join(default_ivector_dir, 'ubm'))
-    mkdir_for_dir(os.path.join(default_ivector_dir, 'log'))
-    mkdir_for_dir(os.path.join(default_ivector_dir, 'feat'))
+    #mkdir_for_dir(os.path.join(default_ivector_dir, 'ivector'))
+    #mkdir_for_dir(os.path.join(default_ivector_dir, 'ubm'))
+    #mkdir_for_dir(os.path.join(default_ivector_dir, 'log'))
+    #mkdir_for_dir(os.path.join(default_ivector_dir, 'feat'))
 
     def make_scp(path_wav, path_scp):
         wav_list = []
@@ -108,7 +108,6 @@ def extract_ivector(input_wav_dir, output_ivector_file):
 
     # cleanup, remove large files
     mkdir_for_dir(os.path.join(default_ivector_dir, 'ivector'))
-    mkdir_for_dir(os.path.join(default_ivector_dir, 'ubm'))
     mkdir_for_dir(os.path.join(default_ivector_dir, 'log'))
     mkdir_for_dir(os.path.join(default_ivector_dir, 'feat'))
 
