@@ -7,7 +7,7 @@ import shutil
 
 # kaldi, htk, srilm, caffe, mallet, matlab
 
-default_zrc_dir = '/home/c2tao/ZRC_revision/'
+default_zrc_dir = '/home/c2tao/matdnn/'
 default_mat_dir = os.path.join(default_zrc_dir, 'mat')
 default_mdnn_dir = os.path.join(default_zrc_dir, 'mdnn')
 default_ivector_dir = os.path.join(default_zrc_dir, 'ivector')
@@ -95,8 +95,7 @@ def extract_ivector(input_wav_dir, output_ivector_file):
     make_scp(input_wav_dir, scp_file)
 
     # extract ivector file
-    p = subprocess.Popen('./run.sh', cwd = default_ivector_dir, shell=True)
-    p.wait()
+    p = subprocess.Popen('./run.sh', cwd = default_ivector_dir, shell=True).wait()
 
     # copy ivector to destination
     ivector_file = os.path.join(default_ivector_dir, 'ivector', 'ivector.ark')
@@ -258,7 +257,7 @@ def test_api_function():
     reinforce_label(model_dir, rein_dir)
 
 if __name__=='__main__':
-    root = '/home/c2tao/ZRC_revision/matdnn/files/'
+    root = '/home/c2tao/matdnn_files/'
     wav_dir = '/home/c2tao/timit_mini_corpus/' 
 
     ivector_file = root + 'ivector.ark'
@@ -267,7 +266,6 @@ if __name__=='__main__':
     model_dir = root + 'token/'
     init_dir = root +'init/'
     rein_dir = root +'rein/'
-    '''
     extract_ivector(wav_dir, ivector_file)
     extract_mfcc(wav_dir, feature_file, feature_dir)
     extract_init(wav_dir, 10, init_dir+'10.txt')
@@ -281,7 +279,6 @@ if __name__=='__main__':
     #train_tokenizer(init_dir+'10.txt', feature_dir, 5,  model_dir+'10_5/')
     #train_tokenizer(init_dir+'20.txt', feature_dir, 3,  model_dir+'20_3/')
     #train_tokenizer(init_dir+'20.txt', feature_dir, 5,  model_dir+'20_5/')
-    '''
     reinforce_label(model_dir, rein_dir, cluster_list = [10], state_list = [3 ,5])
     reinforce_label(model_dir, rein_dir)
 
