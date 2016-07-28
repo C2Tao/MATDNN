@@ -210,19 +210,22 @@ def reinforce_label(input_tokenizer_dir, output_rein_dir, cluster_list = None, s
     mkdir_for_dir(os.path.join(default_mat_dir, 'exp'))
 
 class Fobj(object):
-    def __init__(self, path, overwrite = False, **kwargs):
+    def __init__(self, path, default = None, overwrite = False, **kwargs):
         '''
-        if directory(path) does not exist, 
+        if path does not exist, 
             it will be created
         if parameter pickle file already exists,
             kwargs has no effect and it will be discarded
-        if parameter pickle file does not exist, 
+        if parameter pickle file does not exist, or overwrite = True
+            the entire directory will be deleted and recreated
+        if overparameter pickle file does not exist, 
             the entire directory will be deleted and recreated
         calling build constructs the object with param
         '''
         self.path = path
         self.param_file = os.path.join(path, 'param.pkl')
-        print 'initializing', self.__class__.__name__,'object at',path
+        print 'initializing', self.__class__.__name__, 'object at', path
+        
         if os.path.exists(self.param_file) and not overwrite:
             self.load()
             print '    WARNING: parameter file already exists, set "overwrite = True" to overwrite'
@@ -232,10 +235,11 @@ class Fobj(object):
             mkdir_for_dir(path)
             print '    updated parameter file'
             #print self
-        self.save()
-        
+
         if overwrite:
             self.build()
+        self.save()
+
             
     def __repr__(self):
         return 'printing: '+self.param_file+'\n'+'\n'.join(map(lambda kv: ' '*4+str(kv[0])+': '+str(kv[1]),
@@ -252,25 +256,33 @@ class Fobj(object):
     def build(self):
         pass
 
+class Test_Fobj(Fobj):
+    def __init__(self, path, overwrite, a = None, b = None):
+        super(self.__class__, self).__init__(path, overwrite, a = a, b = b )
+
 class Archive(Fobj):
     def build(self):
+        self.ivector_file = os.path.join(self.path, 'ivector.ark')
+        self.feature_file = os.path.join(self.path, 'feat.mfc')
+        self.feature_dir = os.path.join(self.path, 'mfc/')
         extract_ivector(self.wav_dir, self.ivector_file)
         extract_mfcc(self.wav_dir, self.feature_file, self.feature_dir)
 
-
 class Init(Fobj):
     def build(self):
-        if hasattr(self, 'wav_dir') and hasattr(self, 'cluster_list'):
+        if hasattr(self, 'archive'):
             for cluster_number in self.cluster_list:
-                extract_init(self.wav_dir, cluster_number, os.path.join(self.path, str(cluster_number) + '.txt'))
-        else:
-            reinforce_label(self.tokenizer_dir, self.path, self.cluster_list, self.state_list)
+                extract_init(self.archive.wav_dir, cluster_number, os.path.join(self.path, str(cluster_number) + '.txt'))
+        elif hasattr(self, 'tokenizer'):
+            self.cluster_list = self.tokenizer.cluster_list
+            reinforce_label(self.tokenizer.path, self.path, self.tokenizer.cluster_list, self.tokenizer.state_list)
 
 class Tokenizer(Fobj):
     def build(self):
+        self.cluster_list = self.init.cluster_list
         run_parallel(train_tokenizer,[(
-                    self.init_dir+str(cluster_number)+'.txt', 
-                    self.feature_dir, 
+                    self.init.path+str(cluster_number)+'.txt', 
+                    self.archive.feature_dir, 
                     state_number, 
                     os.path.join(self.path, '{}_{}/'.format(cluster_number, state_number)))
             for cluster_number in self.cluster_list for state_number in self.state_list])
@@ -297,7 +309,9 @@ def test_fobject():
     fobj = Fobj('tmp', x = 1, y = 2, z = 3)
     fobj = Fobj('tmp', x = 0, y = 0, z = 0)
     fobj = Fobj('tmp', x = 0, y = 0, z = 0, overwrite = True)
+    fobj = Test_Fobj('tmp', overwrite = True, a = 1, b = 1)
 
+    print fobj
 def test_parallel_example_function(x, y):
     return x*y
 
@@ -335,43 +349,43 @@ if __name__=='__main__':
     #test_fobject()
     #test_parallel()
     root = '/home/c2tao/matdnn_files/'
-    execute_list = [1, 2, 3, 4]
+    execute_list = [3, 4]
 
-    
-
-    P = Fobj(path = root +'temp/',
-        wav_dir = '/home/c2tao/timit_mini_corpus/',
-        ivector_file = root + 'ivector.ark',
-        feature_file = root + 'feat.mfc',
-        feature_dir = root + 'mfc/',
-        model_dir = root + 'token/',
-        model2_dir = root + 'token2/',
-        init_dir = root + 'init/',
-        rein_dir = root + 'rein/',
-        cluster_list = [10, 20],
-        state_list = [3, 5], overwrite = True)
+    path = Fobj(path = root + 'path/',
+        wav = '/home/c2tao/timit_mini_corpus/',
+        archive = root + 'feature/',
+        init = root + 'init/',
+        model0 = root + 'token/',
+        reinforce = root + 'rein/',
+        model1 = root + 'token2/',
+        overwrite = True)
    
-    I = Init(path = P.init_dir, 
-        cluster_list = P.cluster_list, 
-        wav_dir = P.wav_dir, 
+    param = Fobj(path = root + 'param/',
+        cluster_list = [10, 20],
+        state_list = [3, 5],
+        overwrite = True)
+
+    A = Archive(path = path.archive,
+        wav_dir = path.wav,
+        overwrite = 0 in execute_list)
+ 
+    I = Init(path = path.init, 
+        archive = A, 
+        cluster_list = param.cluster_list, 
         overwrite = 1 in execute_list)
     
-    T = Tokenizer(path = P.model_dir, 
-        init_dir = I.path,
-        feature_dir = P.feature_dir, 
-        cluster_list = P.cluster_list,
-        state_list = P.state_list,
+    T = Tokenizer(path = path.model0, 
+        archive = A, 
+        init = I,
+        state_list = param.state_list,
         overwrite = 2 in execute_list)
 
-    R = Init(path = P.rein_dir, 
-        cluster_list = P.cluster_list,
-        state_list = P.state_list,
-        tokenizer_dir = T.path,
+    R = Init(path = path.reinforce, 
+        tokenizer = T,
         overwrite = 3 in execute_list)
 
-    S = Tokenizer(path = P.model2_dir, 
-        init_dir = R.path,
-        feature_dir = P.feature_dir, 
-        cluster_list = P.cluster_list,
-        state_list = P.state_list,
+    S = Tokenizer(path = path.model1, 
+        archive = A, 
+        init = R,
+        state_list = param.state_list,
         overwrite = 4 in execute_list)
