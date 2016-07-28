@@ -204,14 +204,11 @@ def proto_train(model_name, hidden_list, output_list):
     p3 = proto_train_3(len(hidden_list), output_list)
     return remove_indent('\n'.join([p0, p1, p2, p3]), 2)
 
-
 if __name__ == '__main__':
-    #print proto_train_3.replace('{x}','2')
     model_name = 'timit'
     hidden_list = [256, 256, 39]
     output_list = [10, 10, 20, 20]
     input_dim = 751
-
 
     print '========================'
     print proto_solver(model_name)

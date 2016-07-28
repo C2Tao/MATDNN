@@ -5,16 +5,27 @@ import time
 import sys
 import shutil
 import proto
+import cPickle
+
 # kaldi, htk, srilm, caffe, mallet, matlab
 
+# matdnn path
 default_zrc_dir = '/home/c2tao/matdnn/'
-default_mat_dir = os.path.join(default_zrc_dir, 'mat')
-default_mdnn_dir = os.path.join(default_zrc_dir, 'mdnn')
+
+# ivector path
 default_ivector_dir = os.path.join(default_zrc_dir, 'ivector')
+
+# mat path
+default_mat_dir = os.path.join(default_zrc_dir, 'mat')
 default_temp_dir = os.path.join(default_zrc_dir, 'temp')
 default_zrst_dir = os.path.join(default_mat_dir, 'zrst')
 default_matlab_dir = os.path.join(default_zrst_dir, 'matlab')
 sys.path.insert(1, default_zrst_dir)
+
+# mdnn path
+import proto
+default_caffe_dir = os.path.join(default_zrc_dir, 'mdnn')
+default_proto_dir = os.path.join(default_caffe_dir, 'proto')
 
 def lsdir_full(path):
     return [os.path.join(path, f) for f in sorted(os.listdir(path))]
@@ -43,7 +54,8 @@ def get_arg_from_dir(path):
     # get parameters from name of directory
     args = []
     for d in os.listdir(path):
-        args.append(map(int, d.split('.')[0].split('_')))
+        if 'pkl' not in d:
+            args.append(map(int, d.split('.')[0].split('_')))
     params = zip(*args)
     return map(lambda p: sorted(list(set(p))), params)
 
@@ -96,11 +108,12 @@ def extract_ivector(input_wav_dir, output_ivector_file):
         with open(path_scp, 'w') as fscp:
             for wav in wav_list:
                 fscp.write(wav[:-4]+' '+os.path.join(path_wav, wav)+'\n')
+
     scp_file = os.path.join(default_ivector_dir, 'material', 'wav.scp')
     make_scp(input_wav_dir, scp_file)
 
     # extract ivector file
-    p = subprocess.Popen('./run.sh', cwd = default_ivector_dir, shell=True).wait()
+    subprocess.Popen('./run.sh', cwd = default_ivector_dir, shell=True).wait()
 
     # copy ivector to destination
     ivector_file = os.path.join(default_ivector_dir, 'ivector', 'ivector.ark')
@@ -120,13 +133,12 @@ def extract_init(input_wav_dir, cluster_number, output_init_file):
 
     # extract init file
     cmd = 'matlab -nosplash -nodesktop -nojvm -r "clusterDetection_function {0} {1} {2}"'.format(input_wav_dir, cluster_number, init_word_file)
-    p = subprocess.Popen(cmd, cwd = default_matlab_dir, shell=True)
-    p.wait() 
+    subprocess.Popen(cmd, cwd = default_matlab_dir, shell=True).wait() 
     util.flat_dumpfile(init_word_file, output_init_file)
     
     # cleanup, remove large files
-    p = subprocess.Popen('rm *temp*', cwd = default_matlab_dir, shell=True)
-    p.wait() 
+    subprocess.Popen('rm *temp*', cwd = default_matlab_dir, shell=True).wait() 
+    
 
 def train_tokenizer(input_init_file, input_feature_dir, state_number, output_model_dir):
     # secure destination
@@ -161,10 +173,10 @@ def train_tokenizer(input_init_file, input_feature_dir, state_number, output_mod
     A.iteration('a_keep')
 
         
-def reinforce_label(input_tokenizer_dir,  output_rein_dir, cluster_list = None, state_list = None):
+def reinforce_label(input_tokenizer_dir, output_rein_dir, cluster_list = None, state_list = None):
     # secure output dir
-    mkdir_for_dir(output_rein_dir)
-
+    mkdir_for_file(os.path.join(output_rein_dir, 'dummy.txt'))
+    
     #get cluster_list and state_list from input dir
     if not cluster_list or not state_list:
         cluster_list, state_list = get_arg_from_dir(input_tokenizer_dir)
@@ -186,7 +198,8 @@ def reinforce_label(input_tokenizer_dir,  output_rein_dir, cluster_list = None, 
     
     arg1 = ' '.join(map(str, cluster_list))
     arg2 = ' '.join(map(str, state_list))
-    p = subprocess.Popen('./MR_commandline.sh "{}" "{}"'.format(arg1, arg2), cwd = default_mat_dir, shell=True).wait()
+    cmd = './MR_commandline.sh "{}" "{}"'.format(arg1, arg2)
+    p = subprocess.Popen(cmd, cwd = default_mat_dir, shell=True).wait()
 
     # copy files to output dir
     subprocess.Popen('mv * {}'.format(output_rein_dir), cwd = os.path.join(default_mat_dir, 'init'), shell=True).wait()
@@ -196,47 +209,103 @@ def reinforce_label(input_tokenizer_dir,  output_rein_dir, cluster_list = None, 
     mkdir_for_dir(os.path.join(default_mat_dir, 'init'))
     mkdir_for_dir(os.path.join(default_mat_dir, 'exp'))
 
-def train_neuralnet(input_tokenizer):
-    pass 
+class Fobj(object):
+    def __init__(self, path, overwrite = False, **kwargs):
+        '''
+        if directory(path) does not exist, 
+            it will be created
+        if parameter pickle file already exists,
+            kwargs has no effect and it will be discarded
+        if parameter pickle file does not exist, 
+            the entire directory will be deleted and recreated
+        calling build constructs the object with param
+        '''
+        self.path = path
+        self.param_file = os.path.join(path, 'param.pkl')
+        print 'initializing', self.__class__.__name__,'object at',path
+        if os.path.exists(self.param_file) and not overwrite:
+            self.load()
+            print '    WARNING: parameter file already exists, set "overwrite = True" to overwrite'
+            #print self.param_file
+        else:
+            self.__dict__.update(kwargs)
+            mkdir_for_dir(path)
+            print '    updated parameter file'
+            #print self
+        self.save()
+        
+        if overwrite:
+            self.build()
+            
+    def __repr__(self):
+        return 'printing: '+self.param_file+'\n'+'\n'.join(map(lambda kv: ' '*4+str(kv[0])+': '+str(kv[1]),
+            sorted(self.__dict__.items(), key = lambda x: x[0]) ))
+
+    def load(self):
+        with open(self.param_file, 'rb') as f:
+            self.__dict__.update(cPickle.load(f))
     
-class Init(object):
-    def __init__(self, init_file = None, wav_dir = None):
-        self.init_file = init_file
-        self.wav_dir = wav_dir
-        self.cluster_number = int(os.path.split()[-1].split('.')[0])
+    def save(self):
+        with open(self.param_file, 'wb') as f:
+            cPickle.dump(self.__dict__, f, protocol=cPickle.HIGHEST_PROTOCOL)
 
-    def extract(self):
-        self.cluster_number = cluster_number
-        extract_init(self.wav_dir, cluster_number, self.init_file)
+    def build(self):
+        pass
 
-class Tokenizer(object):
-    def __init__(self,  model_dir = None, init_file = None, feature_dir = None):
-        self.init_file = init_file
-        self.model_dir = model_dir
-        self.feature_dir = feature_dir
+class Archive(Fobj):
+    def build(self):
+        extract_ivector(self.wav_dir, self.ivector_file)
+        extract_mfcc(self.wav_dir, self.feature_file, self.feature_dir)
 
-    def train(self, state_number):
-        self.state_number = state_number
-        train_tokenizer(self.feature_dir, self.init_file, state_number, self.model_dir)
+
+class Init(Fobj):
+    def build(self):
+        if hasattr(self, 'wav_dir') and hasattr(self, 'cluster_list'):
+            for cluster_number in self.cluster_list:
+                extract_init(self.wav_dir, cluster_number, os.path.join(self.path, str(cluster_number) + '.txt'))
+        else:
+            reinforce_label(self.tokenizer_dir, self.path, self.cluster_list, self.state_list)
+
+class Tokenizer(Fobj):
+    def build(self):
+        run_parallel(train_tokenizer,[(
+                    self.init_dir+str(cluster_number)+'.txt', 
+                    self.feature_dir, 
+                    state_number, 
+                    os.path.join(self.path, '{}_{}/'.format(cluster_number, state_number)))
+            for cluster_number in self.cluster_list for state_number in self.state_list])
          
-class MAT(object):
-    '''
-    def __init__(self, model_dir = None, init_dir = None, feature_dir = None, state_list, cluster_list):
-        self.path_mat = path_mat
-        self.work_mat = work_mat
-        self.num_states = sorted(num_states)
-        self.num_tokens = sorted(num_tokens)
-    '''
-    def extract_labels(self):
-        pass 
+class Proto(object):
+    def __init__(self, path, input_dim, hidden_list, output_list):
+        self.model_name = model_name
+        self.input_dim = input_dim 
+        self.hidden_list = hidden_list
+        self.output_list = output_list
 
-    def reinforce_label(self):
-        self.append_path(self.work_zrst)
-        self.mkdir_for_dir(os.path.join(self.work_mat, 'pattern'))
+    def build(self):
+        with open(self.model_name, 'w') as f:
+            f.write(proto_solver(self.model_name))
+        print proto_deploy(self.model_name, self.input_dim, self.hidden_list)
+        print proto_train(self.model_name, self.hidden_list, self.output_list)
+        
 
-    
-def test_api_function():
-    root = '/home/c2tao/ZRC_revision/matdnn/files/'
+class NeuralNet(object):
+    def __init__(self):
+        pass
+
+def test_fobject():
+    fobj = Fobj('tmp', x = 1, y = 2, z = 3)
+    fobj = Fobj('tmp', x = 0, y = 0, z = 0)
+    fobj = Fobj('tmp', x = 0, y = 0, z = 0, overwrite = True)
+
+def test_parallel_example_function(x, y):
+    return x*y
+
+def test_parallel():
+    print run_parallel(test_parallel_example_function, [(1, 2), (3, 4), (5, 6)])
+
+def test_mat():
+    root = '/home/c2tao/matdnn_files/'
     wav_dir = '/home/c2tao/timit_mini_corpus/' 
 
     ivector_file = root + 'ivector.ark'
@@ -262,29 +331,47 @@ def test_api_function():
     reinforce_label(model_dir, rein_dir)
 
 if __name__=='__main__':
+    #test_mat()
+    #test_fobject()
+    #test_parallel()
     root = '/home/c2tao/matdnn_files/'
-    wav_dir = '/home/c2tao/timit_mini_corpus/' 
+    execute_list = [1, 2, 3, 4]
 
-    ivector_file = root + 'ivector.ark'
-    feature_file = root + 'feat.mfc'
-    feature_dir = root + 'mfc/'
-    model_dir = root + 'token/'
-    init_dir = root +'init/'
-    rein_dir = root +'rein/'
-    extract_ivector(wav_dir, ivector_file)
-    #extract_mfcc(wav_dir, feature_file, feature_dir)
-    #extract_init(wav_dir, 10, init_dir+'10.txt')
-    #extract_init(wav_dir, 20, init_dir+'20.txt')
-    #run_parallel(train_tokenizer, [
-    #            (init_dir+'10.txt', feature_dir, 3,  model_dir+'10_3/'),
-    #            (init_dir+'10.txt', feature_dir, 5,  model_dir+'10_5/'),
-    #            (init_dir+'20.txt', feature_dir, 3,  model_dir+'20_3/'),
-    #            (init_dir+'20.txt', feature_dir, 5,  model_dir+'20_5/')])
-    #train_tokenizer(init_dir+'10.txt', feature_dir, 3,  model_dir+'10_3/')
-    #train_tokenizer(init_dir+'10.txt', feature_dir, 5,  model_dir+'10_5/')
-    #train_tokenizer(init_dir+'20.txt', feature_dir, 3,  model_dir+'20_3/')
-    #train_tokenizer(init_dir+'20.txt', feature_dir, 5,  model_dir+'20_5/')
-    #reinforce_label(model_dir, rein_dir, cluster_list = [10], state_list = [3 ,5])
-    #reinforce_label(model_dir, rein_dir)
+    
 
+    P = Fobj(path = root +'temp/',
+        wav_dir = '/home/c2tao/timit_mini_corpus/',
+        ivector_file = root + 'ivector.ark',
+        feature_file = root + 'feat.mfc',
+        feature_dir = root + 'mfc/',
+        model_dir = root + 'token/',
+        model2_dir = root + 'token2/',
+        init_dir = root + 'init/',
+        rein_dir = root + 'rein/',
+        cluster_list = [10, 20],
+        state_list = [3, 5], overwrite = True)
+   
+    I = Init(path = P.init_dir, 
+        cluster_list = P.cluster_list, 
+        wav_dir = P.wav_dir, 
+        overwrite = 1 in execute_list)
+    
+    T = Tokenizer(path = P.model_dir, 
+        init_dir = I.path,
+        feature_dir = P.feature_dir, 
+        cluster_list = P.cluster_list,
+        state_list = P.state_list,
+        overwrite = 2 in execute_list)
 
+    R = Init(path = P.rein_dir, 
+        cluster_list = P.cluster_list,
+        state_list = P.state_list,
+        tokenizer_dir = T.path,
+        overwrite = 3 in execute_list)
+
+    S = Tokenizer(path = P.model2_dir, 
+        init_dir = R.path,
+        feature_dir = P.feature_dir, 
+        cluster_list = P.cluster_list,
+        state_list = P.state_list,
+        overwrite = 4 in execute_list)
