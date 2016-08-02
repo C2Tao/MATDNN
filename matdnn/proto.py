@@ -1,9 +1,9 @@
 def remove_indent(strx, level):
     return '\n'.join(map(lambda x: x[4*level:], strx.split('\n')))
 
-def proto_solver(model_name):
+def proto_solver(train_file, model_dir):
     strx = '''\
-    net: "proto/train/{model_name}_train.prototxt"
+    net: "{train_file}"
     # test_iter specifies how many forward passes the test should carry out.
     # In the case of MNIST, we have test batch size 100 and 100 test iterations,
     # covering the full 10,000 testing images.
@@ -18,16 +18,17 @@ def proto_solver(model_name):
     lr_policy: "inv"
     gamma: 0.0001
     power: 0.75
-    # Display every 100 iterations
-    display: 200
+    # Display every 500 iterations
+    display: 500
     # The maximum number of iterations
-    max_iter: 200000
+    max_iter: 1000
     # snapshot intermediate results
-    snapshot: 20000
-    snapshot_prefix: "exp/{model_name}/caffe/model"
+    snapshot: 500
+    snapshot_prefix: "{model_dir}/"
     # solver mode: CPU or GPU
     solver_mode: GPU'''
-    return remove_indent(strx.replace('{model_name}', model_name), 1)
+    stry = strx.replace('{train_file}', train_file).replace('{model_dir}', model_dir)
+    return remove_indent(stry, 1)
 
 def proto_deploy(model_name, input_dim, hidden_list):
     strx = '''\
@@ -71,7 +72,7 @@ def proto_deploy(model_name, input_dim, hidden_list):
         else:
             stre = ''
         return '\n'.join([strd, stre])
-    stra = strx.replace('{model_name}', model_name)   
+    stra = strx.replace('{model_name}', model_name).replace('{input_dim}', str(input_dim))
 
     str_list = []
     for hidden_id, hidden_size in enumerate(hidden_list):
@@ -80,7 +81,7 @@ def proto_deploy(model_name, input_dim, hidden_list):
     return remove_indent(stra + '\n' + strb, 1)
         
 
-def proto_train(model_name, hidden_list, output_list): 
+def proto_train(model_name, train_list_file, hidden_list, output_list): 
     def proto_train_0(model_name): 
         str0 = '''\
         name: "{x}_train"
@@ -90,12 +91,12 @@ def proto_train(model_name, hidden_list, output_list):
           top: "data"
           top: "label"
           hdf5_data_param {
-            source: "exp/{x}/train.list"
+            source: "{train_list_file}"
             batch_size: 1024
           }
         }
         '''
-        return str0.replace('{x}', model_name)
+        return str0.replace('{x}', model_name).replace('{train_list_file}', train_list_file)
 
     def proto_train_1(output_len):
         stra = '''
@@ -104,12 +105,12 @@ def proto_train(model_name, hidden_list, output_list):
             type: SLICE
             bottom: "label"\n'''
         str1 = '''\
-            top: "label"'''
+            top: "label{}"'''
         strb = '''
             slice_param {
                 slice_dim: 1\n'''
         str2 = '''\
-                slice_point:'''
+                slice_point: {}'''
         strc = '''
             }
         }'''

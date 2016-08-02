@@ -303,7 +303,7 @@ class Tokenizer(Fobj):
                     os.path.join(self.path, '{}_{}/'.format(cluster_number, state_number)),
                     self.pad_silence)
             for cluster_number in self.cluster_list for state_number in self.state_list])
-
+ 
 class NeuralNet(Fobj):
     def build(self):
         assert hasattr(self, 'feature'), 'ERROR: please specify "feature" object'
@@ -341,12 +341,12 @@ class NeuralNet(Fobj):
         with open(self.train_file, 'w') as f:
             f.write(proto.proto_train(self.model_name, self.feature.train_list_file, self.hidden_list, self.output_list))
 
-    def decode(self, feature_file, bnf_file):
-        bnf_id = len(self.hidden_list)
+    def decode(self, feature_file, bnf_file, bnf_id = None):
+        if not bnf_id: bnf_id = len(self.hidden_list)
         cmd = "python work/deploy.py --gpu --output-layer ip{} --input-dim {} --output-dim {} {} {} {} {}".format(
             bnf_id, 
             self.feature.feature_dim, 
-            self.hidden_list[bnf_id-1], 
+            self.hidden_list[bnf_id], 
             feature_file, 
             bnf_file, 
             self.deploy_file, 
@@ -528,9 +528,8 @@ if __name__=='__main__':
         hidden_list = [256, 256, 39],
         output_list = [10, 10, 20, 20],
         overwrite = 6 in execute_list)
-
     P.set_model_file() 
-    P.decode(P.feature.feature_file, 'tmp.feat')
+    P.decode(P.feature.feature_file, 'bnf.feat', 2)
 
     #G = Archive(path = path.dnn, 
     #    neuralnet = P, feature = F,    
