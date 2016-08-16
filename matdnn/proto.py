@@ -18,12 +18,12 @@ def proto_solver(train_file, model_dir):
     lr_policy: "inv"
     gamma: 0.0001
     power: 0.75
-    # Display every 500 iterations
-    display: 500
+    # Display every 1000 iterations
+    display: 1000
     # The maximum number of iterations
-    max_iter: 1000
+    max_iter: 100000
     # snapshot intermediate results
-    snapshot: 500
+    snapshot: 20000
     snapshot_prefix: "{model_dir}/"
     # solver mode: CPU or GPU
     solver_mode: GPU'''

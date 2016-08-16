@@ -245,6 +245,10 @@ class Fobj(object):
         self.save()
 
             
+    def check(self, attr_list=[]):
+        for attr in  attr_list:
+            assert hasattr(self, attr), 'ERROR: please specify "'+attr+'" for "'+self.__class__.__name__+'" object' 
+
     def __repr__(self):
         return 'printing: '+self.param_file+'\n'+'\n'.join(map(lambda kv: ' '*4+str(kv[0])+': '+str(kv[1]),
             sorted(self.__dict__.items(), key = lambda x: x[0]) ))
@@ -273,7 +277,8 @@ class Test_Fobj2(Fobj):
 
 class Archive(Fobj):
     def build(self):
-        assert hasattr(self, 'wav_dir') or hasattr(self, 'neuralnet') and hasattr(self, 'feature'), 'ERROR: please specify "wav_dir" or ("neuralnet" and "feature")'
+        
+        #assert hasattr(self, 'wav_dir') or hasattr(self, 'neuralnet') and hasattr(self, 'feature'), 'ERROR: please specify "wav_dir" or ("neuralnet" and "feature")'
         self.feature_file = os.path.join(self.path, 'frame.feat')
         self.feature_dir = os.path.join(self.path, 'feature/')
 
@@ -285,7 +290,9 @@ class Archive(Fobj):
 
         elif hasattr(self, 'neuralnet') and hasattr(self, 'feature'):
             self.feature_dim = self.neuralnet.output_dim
+            self.feature.build_feat()
             self.neuralnet.decode(self.feature.feature_file, self.feature_file)
+            self.feature.clear_feat()
             self.file_to_dir(self.feature_file, self.feature_dir)
             self.ivector_file = self.feature.ivector_file
 
@@ -396,12 +403,19 @@ class Feature(Fobj):
         #if not hasattr(self, 'input_dim'): self.input_dim = 39
         self.input_dim = self.archive.feature_dim
         self.feature_dim = self.input_dim * (self.left_context+1+self.right_context) + 400
+        self.build_feat()
+        self.clear_feat()
+        self.make_train_list()
+        self.output_list = map(lambda x: int(x.split('_')[0]), self.tokenizer.token_list)
+
+    def build_feat(self):
         self.splice_feat()
         self.make_token_list()
         self.feat_to_h5()
-        self.make_train_list()
-        self.output_list = map(lambda x: int(x.split('_')[0]), self.tokenizer.token_list)
-    
+
+    def clear_feat(self):
+        p = subprocess.Popen('rm ' + self.feature_file, cwd = default_mdnn_dir, shell=True).wait()
+
     def splice_feat(self):
         ivector_opt = '--ivector-ark ' + self.ivector_file if os.path.isfile(self.ivector_file) else ''
         cmd = 'python work/splice_feat.py --left-context {} --right-context {} --input-dim {} {} {} {}'.format(
@@ -482,6 +496,60 @@ class NeuralNet(Fobj):
         p = subprocess.Popen(cmd, cwd = default_mdnn_dir, shell=True).wait()
 
     
+class MAT(Fobj):
+    def build(self):
+        self.init_list = {}
+        self.tokenizer_list = {}
+        
+    def train(self, mr = 0, bnf = 0, overwrite=False):
+        if not overwrite: return
+        if mr == 0: 
+            if bnf ==0:
+                self.check(['path', 'archive', 'cluster_list', 'state_list'])
+                self.init_list[mr] = Init(path = os.path.join(self.path, 'init_mr0/'),
+                    archive = self.archive, 
+                    cluster_list = self.cluster_list, 
+                    overwrite = overwrite)
+            else:
+                self.check(['path', 'mat', 'archive', 'state_list'])
+                mmr = max(self.mat.tokenizer_list.keys())
+                self.init_list[mr] = Init(path = os.path.join(self.path, 'init_mr0/'),
+                    tokenizer = self.mat.tokenizer_list[mmr],
+                    overwrite = overwrite)
+        else:
+            self.init_list[mr] = Init(path = os.path.join(self.path, 'init_mr{}/'.format(mr)),
+                tokenizer = self.tokenizer_list[mr-1],
+                overwrite = overwrite)
+
+        self.tokenizer_list[mr] = Tokenizer(path = os.path.join(self.path, 'token_mr{}/'.format(mr)), 
+            archive = self.archive, 
+            init = self.init_list[mr],
+            state_list = self.state_list,
+            overwrite = overwrite)
+
+        self.save() 
+    
+class MDNN(Fobj):
+    def build(self):
+        self.check(['path', 'archive', 'mat', 'hidden_list'])
+        self.feature_list = {}
+        self.neuralnet_list = {}
+
+    def train(self, mr = 0, overwrite=False):
+        if not overwrite: return
+
+        self.feature_list[mr] = Feature(path = os.path.join(self.path, 'feature_mr{}/'.format(mr)),
+            archive = self.archive,
+            tokenizer = self.mat.tokenizer_list[mr],
+            overwrite = overwrite)
+        
+        self.neuralnet_list[mr] = NeuralNet(path = os.path.join(self.path, 'neuralnet_mr{}/'.format(mr)),
+            feature = self.feature_list[mr],
+            hidden_list = self.hidden_list,
+            overwrite = overwrite)
+
+        self.save() 
+
 def test_fobject():
     fobj = Fobj('tmp', x = 1, y = 2, z = 3)
     fobj = Fobj('tmp', x = 0, y = 0, z = 0)
@@ -543,19 +611,15 @@ def test_api():
     A = Archive(path = path.archive,
         wav_dir = path.wav,
         overwrite = False)
-    
 
-if __name__=='__main__':
-    #def test_api():
-    #test_mat()
-    #test_fobject()
-    #test_parallel()
-    root = '/home/c2tao/matdnn_files/'
+def test_Archive_Init_Tokenizer_Feature_NeuralNet():
+    wav = '/home_local/c2tao/timit_mini_corpus/'
+    root = '/home_local/c2tao/matdnn_files/'
     import sys
     execute_list = map(int, sys.argv[1:])
 
     path = Fobj(path = root + 'path/',
-        wav = '/home/c2tao/timit_mini_corpus/',
+        wav = wav,
         mfcc_htk = root + 'mfcc_htk/',
         mfcc_dnn = root + 'mfcc_dnn/',
         bnf1_htk = root + 'bnf1_htk/',
@@ -621,4 +685,66 @@ if __name__=='__main__':
 
 
 
+def test_MAT_MDNN():
+    wav = '/home_local/c2tao/timit_mini_corpus/'
+    root = '/home_local/c2tao/timit_mini_matdnn/'
+    import sys
+    execute_list = sys.argv[1:]
+    def run(exe_word):
+        return exe_word in execute_list
 
+    path = Fobj(path = root + 'path/',
+        wav = wav,
+        mfcc = root + 'mfcc/',
+        mfcc_mat = root + 'mfcc_hmm/',
+        mfcc_dnn = root + 'mfcc_dnn/',
+        bnf1 = root + 'bnf1/',
+        bnf1_mat = root + 'bnf1_hmm/',
+        bnf1_dnn = root + 'bnf1_dnn/',
+        overwrite = True)
+   
+    param = Fobj(path = root + 'param/',
+        cluster_list = [10, 20],
+        state_list = [3, 5],
+        hidden_list = [32, 32, 10],
+        overwrite = True)
+
+    A = Archive(path = path.mfcc,
+        wav_dir = path.wav,
+        overwrite = run('a'))
+
+    M = MAT(path = path.mfcc_mat,
+        archive = A,
+        cluster_list = param.cluster_list, 
+        state_list = param.state_list,
+        overwrite = run('b'))
+
+    M.train(mr = 0, overwrite = run('b0'))
+    M.train(mr = 1, overwrite = run('b1'))
+    M.train(mr = 2, overwrite = run('b2'))
+
+    N = MDNN(path = path.mfcc_dnn,
+        archive = A,
+        mat = M,
+        hidden_list = param.hidden_list,
+        overwrite = run('c'))
+
+    N.train(mr = 0, overwrite = run('c0')) 
+    N.train(mr = 1, overwrite = run('c1')) 
+    N.train(mr = 2, overwrite = run('c2')) 
+
+    B = Archive(path = path.bnf1,
+        neuralnet = N.neuralnet_list[2],
+        feature = N.feature_list[2],
+        overwrite = run('d'))
+
+
+    M2 = MAT(path = path.bnf1_mat,
+        archive = B,
+        cluster_list = param.cluster_list, 
+        state_list = param.state_list,
+        overwrite = run('e'))
+
+    M2.train(mr = 0, overwrite = run('e0'))
+    M2.train(mr = 1, overwrite = run('e1'))
+    M2.train(mr = 2, overwrite = run('e2'))
